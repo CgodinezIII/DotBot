@@ -45,13 +45,12 @@ void loop() {
 
       // only toggle the LED if the new button state is HIGH
       if (buttonState == HIGH) {
-        for (pos = 0; pos <= 45; pos += 5) { // goes from 0 degrees to 180 degrees
+        for (pos = 1; pos <= 21; pos += 5) { // goes from 0 degrees to 180 degrees
           // in steps of 1 degree
           myservo.write(pos);              // tell servo to go to position in variable 'pos'
           delay(15);                       // waits 15ms for the servo to reach the position
         }
-        delay(500);
-        for (pos = 45; pos >= 0; pos -= 5) { // goes from 180 degrees to 0 degrees
+        for (pos = 21; pos >= 1; pos -= 5) { // goes from 180 degrees to 0 degrees
           myservo.write(pos);              // tell servo to go to position in variable 'pos'
           delay(15);                       // waits 15ms for the servo to reach the position
         }
