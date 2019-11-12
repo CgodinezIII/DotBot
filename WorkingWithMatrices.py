@@ -3,38 +3,48 @@ import cv2 as cv
 import matplotlib.pyplot as plt
 import imutils
 import math
+import serial
 
 
 def resizeImage(image, maxWidth, maxHeight, pixelSize):
 
     print('Original dimensions: {}'.format(image.shape))
-    targetWidth = math.floor(maxWidth/pixelSize)
+
+    #Calculate target height and width of resized image given desired dimensions and pixel size
+    targetWidth = math.floor(maxWidth/pixelSize)  
     targetHeight = math.floor(maxHeight/pixelSize)
 
+    #If the image is 'landscape' orientation, rotate 270 degrees to 'portrait' orientation
     if image.shape[1]>image.shape[0]:
         image = imutils.rotate_bound(image, 270)
         print('flipped')
     
+    #Save the image width and height as variables
     imageWidth = image.shape[1]
     imageHeight = image.shape[0]
 
+    #If shrinking the image use cv.INTER_AREA as interpolation method
     if imageWidth>targetWidth or imageHeight>targetHeight:
         interpolationMethod = cv.INTER_AREA
     
+    #If expanding image use cv.INTER_CUBIC or cv.INTER_LINEAR as interpolation method
     else:
         interpolationMethod = cv.INTER_CUBIC
         #interpolationMethod = cv.INTER_LINEAR    worse but faster
 
+    #If the image to target width ratio is greater than the height ratio, set width to max and scale height
     if imageWidth/targetWidth >= imageHeight/targetHeight:
         print('Scaling based on width')
         newWidth = targetWidth
         newHeight = int((targetWidth/imageWidth)*imageHeight)
        
+    #If the image to target height ratio is greater than the width ratio, set height to max and scale width
     else:
         print('Scaling based on height')
         newWidth = int((targetHeight/imageHeight)*imageWidth)
         newHeight = targetHeight
-        
+
+    #Resize image based on new dimensions    
     dim = (newWidth, newHeight)
     image = cv.resize(image, dim, interpolation  = interpolationMethod)
     print('Final dimensions: {}'.format(image.shape))
@@ -75,7 +85,7 @@ def colorScaleFloydSteinberg(RGBImage):
 
 
 
-def getCoords(binaryImage, pixelSize):
+def getCoordsGray(binaryImage, pixelSize):
     coordinates = []
     for i in range(binaryImage.shape[0]):
         for j in range(binaryImage.shape[1]):
@@ -84,6 +94,29 @@ def getCoords(binaryImage, pixelSize):
     coordinates.append([0,0]) #Go Back Home when complete
     return coordinates
 
+
+def getCoordsRGB(rgbImage, pixelSize):
+    redCoordinates = []
+    blueCoordinates = []
+    greenCoordinates = []
+
+    for i in range(rgbImage.shape[0]):
+        for j in range(rgbImage.shape[1]):
+            for z in range(2):
+                if binaryImage[i, j, z] == 255 and z == 0:
+                    redCoordinates.append([j*pixelSize, i*pixelSize])
+                elif binaryImage[i, j, z] == 255 and z == 1:
+                    greenCoordinates.append([j*pixelSize, i*pixelSize]) 
+                elif binaryImage[i, j, z] == 255 and z == 2:
+                    blueCoordinates.append([j*pixelSize, i*pixelSize]) 
+    redCoordinates.append([0,0]) #Go Back Home when complete
+    greenCoordinates.append([0,0]) #Go Back Home when complete
+    blueCoordinates.append([0,0]) #Go Back Home when complete
+    return redCoordinates, greenCoordinates, blueCoordinates
+
+def sendCoordsGray(coordinateArray, COMPort):
+    serial.Serial(COMPort, baudrate = 9600, timeout = 1)
+    ser.write('Hello')
 
 
 
