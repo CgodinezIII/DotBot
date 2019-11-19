@@ -156,11 +156,9 @@ while(digitalRead(xStop) == 1 && digitalRead(yStop) == 1){
 //Activate Solenoid to Dot
   //ADD CODE HERE
   digitalWrite(Solenoid, HIGH);
-  Serial.println("Solenoid Down");
-  delay(500);
+  delay(750);
   digitalWrite(Solenoid, LOW);
-  Serial.println("Solenoid");
-  
+  Serial.println("DOT");
   
 
 //Send message to python that point complete
