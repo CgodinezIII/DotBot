@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import imutils
 import math
 import serial
+import time
 
 
 def resizeImage(image, maxWidth, maxHeight, pixelSize):
@@ -63,6 +64,8 @@ def grayScaleFloydSteinberg(grayscaleImage):
             grayscaleImage[y+1, x-1] = grayscaleImage[y+1, x-1] + (3/16)*error
             grayscaleImage[y+1, x] = grayscaleImage[y+1, x] + (5/16)*error
             grayscaleImage[y+1, x+1] = grayscaleImage[y+1, x+1] + (1/16)*error
+    grayscaleImage = np.delete(grayscaleImage, grayscaleImage.shape[0]-1, 0)  #Delete the bottom row
+    grayscaleImage = np.delete(grayscaleImage, grayscaleImage.shape[1]-1, 1)  #Delete the left most column
     return grayscaleImage
 
 
@@ -89,7 +92,7 @@ def getCoordsGray(binaryImage, pixelSize):
     coordinates = []
     for i in range(binaryImage.shape[0]):
         for j in range(binaryImage.shape[1]):
-            if binaryImage[i, j] == 255:
+            if binaryImage[i, j] == 0:
                 coordinates.append([j*pixelSize, i*pixelSize])
     coordinates.append([0,0]) #Go Back Home when complete
     return coordinates
@@ -115,22 +118,55 @@ def getCoordsRGB(rgbImage, pixelSize):
     return redCoordinates, greenCoordinates, blueCoordinates
 
 def sendCoordsGray(coordinateArray, COMPort):
-    serial.Serial(COMPort, baudrate = 9600, timeout = 1)
-    ser.write('Hello')
+    ser = serial.Serial(COMPort, baudrate = 9600, timeout = 1)
+    time.sleep(3)
+    ser.write(str.encode("1")) 
+    coordPos = 0
+    
+    while(coordPos<len(coordinateArray)):
+         print(coordinateArray[coordPos])
+         currCoord = coordinateArray[coordPos]
+         currX = currCoord[0]
+         currY = currCoord[1]
+         
+         time.sleep(1)
+         message = ser.readline().decode()
+
+         if(message.strip() == 'Send New Coord'):
+            print("Sending X")
+            ser.write(str.encode(str(currX)))
+            time.sleep(2)
+            Coordinate = ser.readline().decode()
+            print(Coordinate.strip())
+           
+            
+
+         if(message.strip() == "Send Y"):
+            print("Sending Y")
+            ser.write(str.encode(str(currY)))
+            time.sleep(2)
+            Coordinate = ser.readline().decode()
+            print(Coordinate.strip())
+            coordPos += 1
+        
+        
 
 
-
-bgrImage = cv.imread('Google.png')
+COMPort = 'COM16' 
+bgrImage = cv.imread(r'C:\Users\amiller\Documents\Fall2019\POE\DotBot\Smile.png')
 rgbImage = cv.cvtColor(bgrImage, cv.COLOR_BGR2RGB)
 rgbImage = resizeImage(rgbImage,85,110,1)
 grayImage = cv.cvtColor(rgbImage, cv.COLOR_RGB2GRAY)
 
 ditheredImageGray = grayScaleFloydSteinberg(grayImage)
 ditheredImageRGB = colorScaleFloydSteinberg(rgbImage)
-#coords = getCoords(ditheredImage, 1)
+coords = getCoordsGray(ditheredImageGray, 2)
+print("Sending coords...")
+sendCoordsGray(coords, COMPort)
 #print(len(coords))
+print(getCoordsGray(ditheredImageGray, 2))
 rgbImage = cv.cvtColor(bgrImage, cv.COLOR_BGR2RGB)
-rgbImage = resizeImage(rgbImage,850,1100,1)
+rgbImage = resizeImage(rgbImage,85,110,1)
 plt.subplot(131),plt.imshow(rgbImage)
 plt.title('Original Image'), plt.xticks([]), plt.yticks([])
 plt.subplot(132),plt.imshow(ditheredImageRGB)
