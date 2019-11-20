@@ -24,7 +24,7 @@ import time
 # For Windows computers, the name is formatted like: "COM6"
 # For Apple computers, the name is formatted like: "/dev/tty.usbmodemfa141"
 #
-arduinoComPort = "COM17"
+arduinoComPort = "COM16"
 
 
 #
@@ -39,23 +39,79 @@ baudRate = 9600
 # open the serial port
 #
 serialPort = serial.Serial(arduinoComPort, baudRate, timeout=1)
-time.sleep(5) #delays to allow it to connect to the serial
+time.sleep(3) #delays to allow it to connect to the serial
 #writes to the serial port to allow the arduino to begin reading
-serialPort.write(str.encode("begin"))
+#serialPort.write(str.encode("begin"))
 
 
 
 #
 # main loop to read data from the Arduino, then display it
 #
+num = 800
+coords = [[10, 2], [3, 4000], [5, 6], [7, 8]]
+serialPort.write(str.encode("1")) 
+coordPos = 0
 while True:
     #
     # ask for a line of data from the serial port, the ".decode()" converts the
     # data from an "array of bytes", to a string
     #
-    lineOfData = serialPort.readline().decode()
-   
-    hello = 'DOT'
-    if(lineOfData ==  hello):
-        print(lineOfData)
-        print('It works')
+    
+    
+    
+    while(coordPos<len(coords)):
+         
+         
+         time.sleep(1)
+         message = serialPort.readline().decode()
+         
+
+         if(message.strip() == 'Send New Coord'):
+            currCoord = coords[coordPos]
+            currX = currCoord[0]
+            currY = currCoord[1]
+            print("Sending X")
+            serialPort.write(str.encode(str(currX)))
+            time.sleep(2)
+            Coordinate = serialPort.readline()
+            print(Coordinate)
+           
+            
+
+         if(message.strip() == "Send Y"):
+            currCoord = coords[coordPos]
+            currX = currCoord[0]
+            currY = currCoord[1]
+            print("Sending Y")
+            serialPort.write(str.encode(str(currY)))
+            time.sleep(2)
+            Coordinate = serialPort.readline()
+            print(Coordinate)
+            coordPos += 1
+        
+    
+            
+            
+        
+    '''
+    newCoords = [[1, 1000], [12, 15]]
+    for i in range(len(coords)):
+        currCoord = coords[i]
+        currX = currCoord[0]
+        currY = currCoord[1]
+        message = serialPort.readline().decode()
+        if(len(message) > 0 and message == "Send X"):
+            print("Sending" + str.encode(str(currX)))
+            serialPort.write(str.encode(str(currX)))
+            time.sleep(1)
+        X = serialPort.readline().decode()
+        message = serialPort.readline().decode()
+        if(len(message) > 0 and message == "Send Y"):
+            serialPort.write(str.encode(str(currY)))
+            time.sleep(1)
+        Y = serialPort.readline().decode()
+
+        print(X)
+        print(Y)
+    '''
