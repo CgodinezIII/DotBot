@@ -118,55 +118,52 @@ def getCoordsRGB(rgbImage, pixelSize):
     return redCoordinates, greenCoordinates, blueCoordinates
 
 def sendCoordsGray(coordinateArray, COMPort):
-    ser = serial.Serial(COMPort, baudrate = 9600, timeout = 1)
+    ser = serial.Serial(COMPort, baudrate = 115200, timeout = 1)
     time.sleep(3)
     ser.write(str.encode("1")) 
     coordPos = 0
-    
+    numCoords = len(coordinateArray)
     while(coordPos<len(coordinateArray)):
-         print(coordinateArray[coordPos])
+         
          currCoord = coordinateArray[coordPos]
          currX = currCoord[0]
          currY = currCoord[1]
-         
-         time.sleep(1)
+         #time.sleep(1)
          message = ser.readline().decode()
-
+         
          if(message.strip() == 'Send New Coord'):
-            print("Sending X")
+            print("Sending X: " + str(currX))
             ser.write(str.encode(str(currX)))
-            time.sleep(2)
-            Coordinate = ser.readline().decode()
-            print(Coordinate.strip())
+            #time.sleep(2)
+            #Coordinate = ser.readline().decode()
+            #print(Coordinate.strip())
            
             
 
-         if(message.strip() == "Send Y"):
-            print("Sending Y")
+         if(message.strip() == "SendY"):
+            print("Sending Y: " + str(currY))
             ser.write(str.encode(str(currY)))
-            time.sleep(2)
-            Coordinate = ser.readline().decode()
-            print(Coordinate.strip())
+            #time.sleep(2)
+            #Coordinate = ser.readline().decode()
+            #print(Coordinate.strip())
             coordPos += 1
+            print(str(coordPos)+"/"+str(numCoords))
         
         
 
 
-COMPort = 'COM16' 
-bgrImage = cv.imread(r'C:\Users\amiller\Documents\Fall2019\POE\DotBot\Smile.png')
+COMPort = 'COM17' 
+bgrImage = cv.imread(r'C:\Users\amiller\Documents\Fall2019\POE\DotBot\DotbotTeam.jpg')
 rgbImage = cv.cvtColor(bgrImage, cv.COLOR_BGR2RGB)
-rgbImage = resizeImage(rgbImage,85,110,1)
+rgbImage = resizeImage(rgbImage,600,850,5)
 grayImage = cv.cvtColor(rgbImage, cv.COLOR_RGB2GRAY)
 
 ditheredImageGray = grayScaleFloydSteinberg(grayImage)
 ditheredImageRGB = colorScaleFloydSteinberg(rgbImage)
 coords = getCoordsGray(ditheredImageGray, 2)
-print("Sending coords...")
-sendCoordsGray(coords, COMPort)
-#print(len(coords))
-print(getCoordsGray(ditheredImageGray, 2))
 rgbImage = cv.cvtColor(bgrImage, cv.COLOR_BGR2RGB)
-rgbImage = resizeImage(rgbImage,85,110,1)
+rgbImage = resizeImage(rgbImage,110,85,1)
+print(len(coords))
 plt.subplot(131),plt.imshow(rgbImage)
 plt.title('Original Image'), plt.xticks([]), plt.yticks([])
 plt.subplot(132),plt.imshow(ditheredImageRGB)
@@ -174,4 +171,9 @@ plt.title('Color Dithered Image'), plt.xticks([]), plt.yticks([])
 plt.subplot(133),plt.imshow(ditheredImageGray,cmap = 'gray')
 plt.title('Binary Dithered Image'), plt.xticks([]), plt.yticks([])
 plt.show()
+print("Sending coords...")
+sendCoordsGray(coords, COMPort)
+#print(len(coords))
+#print(getCoordsGray(ditheredImageGray, 2))
+
 
