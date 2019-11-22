@@ -32,7 +32,7 @@ int numStepsY = 0;
 int StartMessage = 0;
 const int numCoords = 50;
 int coords[numCoords][2];
-bool notDone=false;
+bool notDone=true;
 
 void setup() {
   //Open Serial Port
