@@ -32,7 +32,7 @@ int numStepsY = 0;
 int StartMessage = 0;
 const int numCoords = 50;
 int coords[numCoords][2];
-bool notDone = true;
+
 
 void setup() {
   //Open Serial Port
@@ -64,9 +64,9 @@ void loop() {
   while (Serial.available() > 0) {
     //delay(1000);
     StartMessage = Serial.parseInt();
-    while (StartMessage == 1) {
+    while (StartMessage == 1 ) {
 
-      while (digitalRead(xStop) == 1 && digitalRead(yStop) == 1 && notDone) {
+      while (digitalRead(xStop) == 1 && digitalRead(yStop) == 1 ) {
         readData(); //coords = readData(coords);
         for (int i = 0; i < numCoords; i++) {
           newxCoord = coords[i][0];
@@ -126,13 +126,10 @@ void loop() {
 void readData() {
   //int a[50][2];
   Serial.println("Send New Coords");
-  for ( int i = 0; i < numCoords && notDone; i++ ) {
-    for ( int j = 0; j < 2 && notDone; j++ ) {
-      if (Serial.available() == 0) {
-        notDone = false;
-        break;
-      }
+  for ( int i = 0; (i < numCoords); i++ ) {
+    for ( int j = 0; j < 2; j++ ) {
       coords[ i ][ j ] = Serial.parseInt();
+
     }
     //  return a;
   }

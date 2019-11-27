@@ -116,6 +116,52 @@ def getCoordsRGB(rgbImage, pixelSize):
     greenCoordinates.append([0,0]) #Go Back Home when complete
     blueCoordinates.append([0,0]) #Go Back Home when complete
     return redCoordinates, greenCoordinates, blueCoordinates
+def coordStringArrayCreation(coordinateArray, coordsPerString):
+    coordStringArray = []
+    coordString = ""
+    coordPos = 0
+    remainder = len(coordinateArray)%coordsPerString
+    #print(remainder)
+    numComplete = int(len(coordinateArray)/coordsPerString)
+    #print(numComplete)
+    #Create Coordstring Array
+    while(coordPos<len(coordinateArray)):
+        coordString = ""
+        for i in range(numComplete):
+            for i in range(coordsPerString):
+                if (i == coordsPerString-1):
+                    #print(coordPos)
+                    currCoord = coordinateArray[coordPos+i]
+                    coordString += str(currCoord[0]) + ", " + str(currCoord[1])
+                    coordPos += coordsPerString
+                   
+                    #print(coordPos)
+                    coordStringArray.append(coordString)
+                    #print(coordString)
+                    #ser.write(str.encode(coordString)) 
+                    #print("Send")
+                else:
+                    currCoord = coordinateArray[coordPos+i]
+                    coordString = coordString + str(currCoord[0]) + ", " + str(currCoord[1]) + ", "  
+                  
+        coordString = ""           
+        for i in range(remainder-1):
+            if (i == remainder-2):
+                currCoord = coordinateArray[coordPos+i]
+                coordString += str(currCoord[0]) + ", " + str(currCoord[1])
+                coordPos += remainder
+                #print(coordString)
+                coordStringArray.append(coordString)
+                #print("Send")
+            else:
+                currCoord = coordinateArray[coordPos+i]
+                print(coordPos+i)
+                coordString = coordString + str(currCoord[0]) + ", " + str(currCoord[1]) + ", "
+                coordStringArray.append(coordString)
+                            
+    return coordStringArray
+
+
 
 def sendCoordsGray(coordinateArray, COMPort):
     ser = serial.Serial(COMPort, baudrate = 115200, timeout = 1)
@@ -123,13 +169,16 @@ def sendCoordsGray(coordinateArray, COMPort):
     ser.write(str.encode("1")) 
     coordPos = 0
     numCoords = len(coordinateArray)
+    
+
     while(coordPos<len(coordinateArray)):
-         
+        
          currCoord = coordinateArray[coordPos]
          currX = currCoord[0]
          currY = currCoord[1]
          #time.sleep(1)
          message = ser.readline().decode()
+         print(message)
          
          if(message.strip() == 'Send New Coord'):
             print("Sending X: " + str(currX))
@@ -152,7 +201,7 @@ def sendCoordsGray(coordinateArray, COMPort):
         
 
 
-COMPort = 'COM17' 
+COMPort = 'COM16' 
 bgrImage = cv.imread(r'C:\Users\amiller\Documents\Fall2019\POE\DotBot\DotbotTeam.jpg')
 rgbImage = cv.cvtColor(bgrImage, cv.COLOR_BGR2RGB)
 rgbImage = resizeImage(rgbImage,600,850,5)
@@ -161,9 +210,14 @@ grayImage = cv.cvtColor(rgbImage, cv.COLOR_RGB2GRAY)
 ditheredImageGray = grayScaleFloydSteinberg(grayImage)
 ditheredImageRGB = colorScaleFloydSteinberg(rgbImage)
 coords = getCoordsGray(ditheredImageGray, 2)
+#print(len(coords))
+#print(coords[9397])
+data = [[1,2], [3,4], [5,6], [7,8], [9,10], [11,12], [13,14], [15, 16]]
+stringArray = coordStringArrayCreation(coords, coordsPerString = 50)
+print(len(stringArray))
+'''
 rgbImage = cv.cvtColor(bgrImage, cv.COLOR_BGR2RGB)
 rgbImage = resizeImage(rgbImage,110,85,1)
-print(len(coords))
 plt.subplot(131),plt.imshow(rgbImage)
 plt.title('Original Image'), plt.xticks([]), plt.yticks([])
 plt.subplot(132),plt.imshow(ditheredImageRGB)
@@ -175,5 +229,5 @@ print("Sending coords...")
 sendCoordsGray(coords, COMPort)
 #print(len(coords))
 #print(getCoordsGray(ditheredImageGray, 2))
-
+'''
 
