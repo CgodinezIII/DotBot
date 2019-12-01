@@ -7,22 +7,27 @@ import serial
 import time
 
 
-def resizeImage(image, maxWidth, maxHeight, pixelSize):
+def resizeImage(image, maxWidth, maxHeight, pixelSpacing):
 
-    print('Original dimensions: {}'.format(image.shape))
+    print('Original dimensions: {}, {}'.format(image.shape[0], image.shape[1]))
+    print("Resizing...")
 
     #Calculate target height and width of resized image given desired dimensions and pixel size
-    targetWidth = math.floor(maxWidth/pixelSize)  
-    targetHeight = math.floor(maxHeight/pixelSize)
-
-    #If the image is 'landscape' orientation, rotate 270 degrees to 'portrait' orientation
-    if image.shape[1]>image.shape[0]:
-        image = imutils.rotate_bound(image, 270)
-        print('flipped')
+    targetWidth = math.floor(maxWidth/pixelSpacing)  
+    targetHeight = math.floor(maxHeight/pixelSpacing)
     
     #Save the image width and height as variables
     imageWidth = image.shape[1]
     imageHeight = image.shape[0]
+
+    #If the image is 'landscape' orientation, rotate 270 degrees to 'portrait' orientation
+    if  imageWidth>imageHeight and targetWidth<targetHeight:
+        image = imutils.rotate_bound(image, 270)
+        print('flipped')
+        imageWidth = image.shape[1]
+        imageHeight = image.shape[0]
+    
+    
 
     #If shrinking the image use cv.INTER_AREA as interpolation method
     if imageWidth>targetWidth or imageHeight>targetHeight:
@@ -50,9 +55,6 @@ def resizeImage(image, maxWidth, maxHeight, pixelSize):
     image = cv.resize(image, dim, interpolation  = interpolationMethod)
     print('Final dimensions: {}'.format(image.shape))
     return image
-
-
-
 def grayScaleFloydSteinberg(grayscaleImage):
     for y in range(grayscaleImage.shape[0]-1):
         for x in range(grayscaleImage.shape[1]-1):
@@ -67,9 +69,6 @@ def grayScaleFloydSteinberg(grayscaleImage):
     grayscaleImage = np.delete(grayscaleImage, grayscaleImage.shape[0]-1, 0)  #Delete the bottom row
     grayscaleImage = np.delete(grayscaleImage, grayscaleImage.shape[1]-1, 1)  #Delete the left most column
     return grayscaleImage
-
-
-
 def colorScaleFloydSteinberg(RGBImage):
     for y in range(RGBImage.shape[0]-1):
         for x in range(RGBImage.shape[1]-1):
@@ -85,19 +84,14 @@ def colorScaleFloydSteinberg(RGBImage):
     RGBImage = np.delete(RGBImage, RGBImage.shape[0]-1, 0)  #Delete the bottom row
     RGBImage = np.delete(RGBImage, RGBImage.shape[1]-1, 1)  #Delete the left most column
     return RGBImage
-
-
-
-def getCoordsGray(binaryImage, pixelSize):
+def getCoordsGray(binaryImage, pixelSpacing):
     coordinates = []
     for i in range(binaryImage.shape[0]):
         for j in range(binaryImage.shape[1]):
             if binaryImage[i, j] == 0:
-                coordinates.append([j*pixelSize, i*pixelSize])
-    coordinates.append([0,0]) #Go Back Home when complete
+                coordinates.append([j*pixelSpacing, i*pixelSpacing])
+    coordinates.append([0,-10]) #Go Back Home when complete
     return coordinates
-
-
 def getCoordsRGB(rgbImage, pixelSize):
     redCoordinates = []
     blueCoordinates = []
@@ -137,6 +131,7 @@ def coordStringArrayCreation(coordinateArray, coordsPerString):
                    
                     #print(coordPos)
                     coordStringArray.append(coordString)
+                    coordString = ""  
                     #print(coordString)
                     #ser.write(str.encode(coordString)) 
                     #print("Send")
@@ -144,51 +139,54 @@ def coordStringArrayCreation(coordinateArray, coordsPerString):
                     currCoord = coordinateArray[coordPos+i]
                     coordString = coordString + str(currCoord[0]) + ", " + str(currCoord[1]) + ", "  
                   
-        coordString = ""           
-        for i in range(remainder-1):
-            if (i == remainder-2):
+        coordString = "" 
+        #print("coordString3")          
+        for i in range(remainder):
+            if (i == remainder-1):
                 currCoord = coordinateArray[coordPos+i]
                 coordString += str(currCoord[0]) + ", " + str(currCoord[1])
                 coordPos += remainder
-                #print(coordString)
+                #print("coordString")
+                #coordStringArray.append(coordString)
+                for i in range(coordsPerString-remainder):
+                    coordString += ", -1, -1"
                 coordStringArray.append(coordString)
+                #coordString = "" 
                 #print("Send")
             else:
                 currCoord = coordinateArray[coordPos+i]
-                print(coordPos+i)
+                
                 coordString = coordString + str(currCoord[0]) + ", " + str(currCoord[1]) + ", "
-                coordStringArray.append(coordString)
+                #coordStringArray.append(coordString)
+                #print("coordString2")
                             
     return coordStringArray
-
-
-
-def sendCoordsGray(coordinateArray, COMPort):
+def sendCoordsGray(stringArray, COMPort):
+    print("Connecting to Serial...")
     ser = serial.Serial(COMPort, baudrate = 115200, timeout = 1)
     time.sleep(3)
     ser.write(str.encode("1")) 
-    coordPos = 0
-    numCoords = len(coordinateArray)
+    stringNum = 0
+    #numCoords = len(stringArray)
+    print("Sending Coords")
     
 
-    while(coordPos<len(coordinateArray)):
-        
-         currCoord = coordinateArray[coordPos]
-         currX = currCoord[0]
-         currY = currCoord[1]
-         #time.sleep(1)
+    while(stringNum<len(stringArray)):
          message = ser.readline().decode()
-         print(message)
+         #print(message.strip())
          
-         if(message.strip() == 'Send New Coord'):
-            print("Sending X: " + str(currX))
-            ser.write(str.encode(str(currX)))
+         if(message.strip() == 'Send New Coords'):
+            print("Message Recieved")
+            ser.write(str.encode(stringArray[stringNum]))
+            print(stringArray[stringNum])
+            #print(stringNum)
+            stringNum = stringNum + 1
             #time.sleep(2)
             #Coordinate = ser.readline().decode()
             #print(Coordinate.strip())
            
             
-
+         '''
          if(message.strip() == "SendY"):
             print("Sending Y: " + str(currY))
             ser.write(str.encode(str(currY)))
@@ -197,37 +195,40 @@ def sendCoordsGray(coordinateArray, COMPort):
             #print(Coordinate.strip())
             coordPos += 1
             print(str(coordPos)+"/"+str(numCoords))
-        
-        
+         '''  
 
 
-COMPort = 'COM16' 
-bgrImage = cv.imread(r'C:\Users\amiller\Documents\Fall2019\POE\DotBot\DotbotTeam.jpg')
+COMPort = "COM17"
+maxWidth = 835
+maxHeight = 962
+pixelSpacing = 1 #Space between Pixels in mm
+
+print("Max Size: {} {}".format(maxWidth, maxHeight))
+bgrImage = cv.imread(r'C:\Users\amiller\Documents\Fall2019\POE\DotBot\Mountain.jpg')
 rgbImage = cv.cvtColor(bgrImage, cv.COLOR_BGR2RGB)
-rgbImage = resizeImage(rgbImage,600,850,5)
+#print("Scaling to {}, {}".format(maxWidth, maxHeight))
+rgbImage = resizeImage(rgbImage,maxWidth, maxHeight, pixelSpacing)
 grayImage = cv.cvtColor(rgbImage, cv.COLOR_RGB2GRAY)
+print(grayImage.shape)
+
 
 ditheredImageGray = grayScaleFloydSteinberg(grayImage)
+print(ditheredImageGray.shape)
 ditheredImageRGB = colorScaleFloydSteinberg(rgbImage)
-coords = getCoordsGray(ditheredImageGray, 2)
+coords = getCoordsGray(ditheredImageGray, pixelSpacing)
+print(coords[len(coords)-2])
 #print(len(coords))
 #print(coords[9397])
-data = [[1,2], [3,4], [5,6], [7,8], [9,10], [11,12], [13,14], [15, 16]]
 stringArray = coordStringArrayCreation(coords, coordsPerString = 50)
-print(len(stringArray))
-'''
-rgbImage = cv.cvtColor(bgrImage, cv.COLOR_BGR2RGB)
-rgbImage = resizeImage(rgbImage,110,85,1)
-plt.subplot(131),plt.imshow(rgbImage)
-plt.title('Original Image'), plt.xticks([]), plt.yticks([])
-plt.subplot(132),plt.imshow(ditheredImageRGB)
-plt.title('Color Dithered Image'), plt.xticks([]), plt.yticks([])
-plt.subplot(133),plt.imshow(ditheredImageGray,cmap = 'gray')
-plt.title('Binary Dithered Image'), plt.xticks([]), plt.yticks([])
-plt.show()
-print("Sending coords...")
-sendCoordsGray(coords, COMPort)
-#print(len(coords))
-#print(getCoordsGray(ditheredImageGray, 2))
-'''
+#print(stringArray)
+sendCoordsGray(stringArray, COMPort)
 
+# rgbImage = cv.cvtColor(bgrImage, cv.COLOR_BGR2RGB)
+# rgbImage = resizeImage(rgbImage,110,85,1)
+# plt.subplot(131),plt.imshow(rgbImage)
+# plt.title('Original Image'), plt.xticks([]), plt.yticks([])
+# plt.subplot(132),plt.imshow(ditheredImageRGB)
+# plt.title('Color Dithered Image'), plt.xticks([]), plt.yticks([])
+# plt.subplot(133),plt.imshow(ditheredImageGray,cmap = 'gray')
+# plt.title('Binary Dithered Image'), plt.xticks([]), plt.yticks([])
+# plt.show()
