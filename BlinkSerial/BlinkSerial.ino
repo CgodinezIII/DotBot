@@ -5,7 +5,7 @@ int garbage;
 int start = 0;
 void setup() {
   // put your setup code here, to run once:
-Serial.begin(9600);
+Serial.begin(115200);
 pinMode(LED_BUILTIN, OUTPUT);
 digitalWrite(LED_BUILTIN, LOW);
 }
@@ -39,7 +39,7 @@ while(Serial.available() > 0){
   Serial.println(Y);
   
   
-  if(Y == 84){
+  if(X == 28){
   digitalWrite(LED_BUILTIN, HIGH);
   
 }

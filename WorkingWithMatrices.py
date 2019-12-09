@@ -19,6 +19,7 @@ def resizeImage(image, maxWidth, maxHeight, pixelSpacing):
     #Save the image width and height as variables
     imageWidth = image.shape[1]
     imageHeight = image.shape[0]
+    print('Check 1')
 
     #If the image is 'landscape' orientation, rotate 270 degrees to 'portrait' orientation
     if  imageWidth>imageHeight and targetWidth<targetHeight:
@@ -183,7 +184,7 @@ def sendCoordsGray(stringArray, COMPort):
             stringNum = stringNum + 1
             #time.sleep(2)
             #Coordinate = ser.readline().decode()
-            #print(Coordinate.strip())
+            #print("Hello")
            
             
          '''
@@ -198,37 +199,37 @@ def sendCoordsGray(stringArray, COMPort):
          '''  
 
 
-COMPort = "COM17"
-maxWidth = 835
-maxHeight = 962
-pixelSpacing = 1 #Space between Pixels in mm
+# COMPort = "COM17"
+# maxWidth = 76-10
+# maxHeight = 76 -10
+# pixelSpacing = 1 #Space between Pixels in mm
 
-print("Max Size: {} {}".format(maxWidth, maxHeight))
-bgrImage = cv.imread(r'C:\Users\amiller\Documents\Fall2019\POE\DotBot\Mountain.jpg')
-rgbImage = cv.cvtColor(bgrImage, cv.COLOR_BGR2RGB)
-#print("Scaling to {}, {}".format(maxWidth, maxHeight))
-rgbImage = resizeImage(rgbImage,maxWidth, maxHeight, pixelSpacing)
-grayImage = cv.cvtColor(rgbImage, cv.COLOR_RGB2GRAY)
-print(grayImage.shape)
-
-
-ditheredImageGray = grayScaleFloydSteinberg(grayImage)
-print(ditheredImageGray.shape)
-ditheredImageRGB = colorScaleFloydSteinberg(rgbImage)
-coords = getCoordsGray(ditheredImageGray, pixelSpacing)
-print(coords[len(coords)-2])
-#print(len(coords))
-#print(coords[9397])
-stringArray = coordStringArrayCreation(coords, coordsPerString = 50)
-#print(stringArray)
-sendCoordsGray(stringArray, COMPort)
-
+# # print("Max Size: {} {}".format(maxWidth, maxHeight))
+# bgrImage = cv.imread(r'C:\Users\amiller\Documents\Fall2019\POE\DotBot\Mountain.jpg')
 # rgbImage = cv.cvtColor(bgrImage, cv.COLOR_BGR2RGB)
-# rgbImage = resizeImage(rgbImage,110,85,1)
-# plt.subplot(131),plt.imshow(rgbImage)
-# plt.title('Original Image'), plt.xticks([]), plt.yticks([])
-# plt.subplot(132),plt.imshow(ditheredImageRGB)
-# plt.title('Color Dithered Image'), plt.xticks([]), plt.yticks([])
-# plt.subplot(133),plt.imshow(ditheredImageGray,cmap = 'gray')
-# plt.title('Binary Dithered Image'), plt.xticks([]), plt.yticks([])
-# plt.show()
+# # #print("Scaling to {}, {}".format(maxWidth, maxHeight))
+# rgbImage = resizeImage(rgbImage,maxWidth, maxHeight, pixelSpacing)
+# grayImage = cv.cvtColor(rgbImage, cv.COLOR_RGB2GRAY)
+# # print(grayImage.shape)
+
+
+# ditheredImageGray = grayScaleFloydSteinberg(grayImage)
+# # print(ditheredImageGray.shape)
+# ditheredImageRGB = colorScaleFloydSteinberg(rgbImage)
+# coords = getCoordsGray(ditheredImageGray, pixelSpacing)
+# print(len(coords))
+# # #print(len(coords))
+# # #print(coords[9397])
+# stringArray = coordStringArrayCreation(coords, coordsPerString = 50)
+# # #print(stringArray)
+# sendCoordsGray(stringArray, COMPort)
+
+# # rgbImage = cv.cvtColor(bgrImage, cv.COLOR_BGR2RGB)
+# # rgbImage = resizeImage(rgbImage,110,85,1)
+# # plt.subplot(131),plt.imshow(rgbImage)
+# # plt.title('Original Image'), plt.xticks([]), plt.yticks([])
+# # plt.subplot(132),plt.imshow(ditheredImageRGB)
+# # plt.title('Color Dithered Image'), plt.xticks([]), plt.yticks([])
+# # plt.subplot(133),plt.imshow(ditheredImageGray,cmap = 'gray')
+# # plt.title('Binary Dithered Image'), plt.xticks([]), plt.yticks([])
+# # plt.show()
