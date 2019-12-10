@@ -1,6 +1,7 @@
 #from PyQt5 import QtWidgets
 from DotBotImageProcessingDataTransmission import resizeImage, grayScaleFloydSteinberg, getCoordsGray, coordStringArrayCreation, sendCoordsGray
 import ctypes
+import qimage2ndarray
 import sys
 from PyQt5.QtWidgets import QLabel, QMainWindow, QApplication, QWidget, QVBoxLayout
 from PyQt5 import QtGui
@@ -22,7 +23,7 @@ user32 = ctypes.windll.user32
 screensize = user32.GetSystemMetrics(0), user32.GetSystemMetrics(1)
 
 #C:\Users\amiller\Documents\Fall2019\POE\DotBot\Logo.jpg
-class Window(QMainWindow):
+class mainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
@@ -65,7 +66,8 @@ class LoadImageWindow(QMainWindow):                           # <===
         self.setFixedSize(int(user32.GetSystemMetrics(0)*.75), int(user32.GetSystemMetrics(1)*.75))
         self.nameLabel = QLabel(self)
         self.nameLabel.setText('Enter Image Path:')
-        self.nameLabel.move(int((user32.GetSystemMetrics(0)*.75)/4), int((user32.GetSystemMetrics(1)*.75)/2))        
+        self.nameLabel.move(int((user32.GetSystemMetrics(0)*.75)/4), int((user32.GetSystemMetrics(1)*.75)/2))  
+        self.nameLabel.adjustSize()      
         self.line = QLineEdit(self)
         self.line.move(int((user32.GetSystemMetrics(0)*.75)/2), int((user32.GetSystemMetrics(1)*.75)/2))
         pybutton = QPushButton('Continue', self)
@@ -144,24 +146,47 @@ class ditheredWindow(QMainWindow):                           # <===
         super().__init__()
         print('loaded')
         self.setWindowTitle("DotBot")
-        self.setFixedSize(int(user32.GetSystemMetrics(0)*.75), int(user32.GetSystemMetrics(1)*.75)) 
-        resizedImage = resizeImage(image, int(maxWidth), int(maxHeight), int(spacing))
-        grayImage = cv.cvtColor(resizedImage, cv.COLOR_RGB2GRAY)
-        ditheredImageGray = grayScaleFloydSteinberg(grayImage)
-        QTditheredImageGray = QtGui.QImage(self.image.data, ditheredImageGray.shape[1], ditheredImageGray.shape[0], QtGui.QImage.Format_Grayscale8)
-        self.image_frame.setPixmap(QtGui.QPixmap.fromImage(self.image))
-        print("working")
-        #----------------------------------
-        pixmap = QPixmap.fromImage(ditheredImageGray)
+        self.setFixedSize(int(user32.GetSystemMetrics(0)*.75), int(user32.GetSystemMetrics(1)*.75))
+        self.central_widget = QWidget()               
+        self.setCentralWidget(self.central_widget)    
+        lay = QVBoxLayout(self.central_widget)
+
+        self.resizedImage = resizeImage(image, int(maxWidth), int(maxHeight), int(spacing))
+        self.grayImage = cv.cvtColor(self.resizedImage, cv.COLOR_RGB2GRAY)
+        self.ditheredImageGray = grayScaleFloydSteinberg(self.grayImage)
+
+        label = QLabel(self)
         
-        pixmap2 = pixmap.scaled(800, 800, Qt.KeepAspectRatio, Qt.FastTransformation)
+        yourQImage = qimage2ndarray.gray2qimage(self.ditheredImageGray)
+        img = QPixmap(yourQImage)
+        img2 = img.scaled(int(user32.GetSystemMetrics(1)*.75), int(user32.GetSystemMetrics(1)*.75), Qt.KeepAspectRatio, Qt.FastTransformation)
         
-        label.setPixmap(pixmap2)
-        label.move(int((user32.GetSystemMetrics(0)*.75)), int((user32.GetSystemMetrics(1)*.75)))
-        #self.resize(pixmap.width(), pixmap.height())
+        label.setPixmap(img2)
 
         lay.addWidget(label)
+        
+        array = coordStringArrayCreation(self.ditheredImageGray, 50)
+
+        self.widthLabel = QLabel(self)
+        self.widthLabel.setText('COM Port (COM17):')
+        self.widthLabel.move(int((user32.GetSystemMetrics(0)*.45)), int((user32.GetSystemMetrics(1)*.75)/8))
+        self.widthLabel.adjustSize()        
+        self.lineWidth = QLineEdit(self)
+        self.lineWidth.move(int((user32.GetSystemMetrics(0)*.53)), int((user32.GetSystemMetrics(1)*.75)/8))
+
+        self.pushButtonPrint = QPushButton("Take Picture", self)
+        self.pushButtonPrint.move(int((3*user32.GetSystemMetrics(0)*.75)/4), int((user32.GetSystemMetrics(1)*.75)/2))
+        self.pushButtonPrint.adjustSize()
+        
+    
+        self.pushButtonPrint.clicked.connect(self.clickMethod)  
+       
+       
         label.show()
+
+    def clickMethod(self):
+        
+
        
 class TakeImageWindow(QMainWindow):                           # <===
     def __init__(self):
@@ -180,5 +205,5 @@ class TakeImageWindow(QMainWindow):                           # <===
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    window = Window()
+    window = mainWindow()
     sys.exit(app.exec())
