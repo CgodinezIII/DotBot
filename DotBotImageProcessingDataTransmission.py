@@ -19,7 +19,7 @@ def resizeImage(image, maxWidth, maxHeight, pixelSpacing):
     #Save the image width and height as variables
     imageWidth = image.shape[1]
     imageHeight = image.shape[0]
-    print('Check 1')
+    
 
     #If the image is 'landscape' orientation, rotate 270 degrees to 'portrait' orientation
     if  imageWidth>imageHeight and targetWidth<targetHeight:
@@ -53,6 +53,7 @@ def resizeImage(image, maxWidth, maxHeight, pixelSpacing):
 
     #Resize image based on new dimensions    
     dim = (newWidth, newHeight)
+    print(dim)
     image = cv.resize(image, dim, interpolation  = interpolationMethod)
     print('Final dimensions: {}'.format(image.shape))
     return image
@@ -177,60 +178,46 @@ def sendCoordsGray(stringArray, COMPort):
          #print(message.strip())
          
          if(message.strip() == 'Send New Coords'):
-            print("Message Recieved")
+            print("Sending Package "+str(stringNum)+"/"+str(len(stringArray)))
             ser.write(str.encode(stringArray[stringNum]))
-            print(stringArray[stringNum])
-            #print(stringNum)
+            
             stringNum = stringNum + 1
-            #time.sleep(2)
-            #Coordinate = ser.readline().decode()
-            #print("Hello")
            
             
-         '''
-         if(message.strip() == "SendY"):
-            print("Sending Y: " + str(currY))
-            ser.write(str.encode(str(currY)))
-            #time.sleep(2)
-            #Coordinate = ser.readline().decode()
-            #print(Coordinate.strip())
-            coordPos += 1
-            print(str(coordPos)+"/"+str(numCoords))
-         '''  
 
+COMPort = "COM17"
+maxWidth = 610
+maxHeight = 915
+pixelSpacing = 2 #Space between Pixels in mm
 
-# COMPort = "COM17"
-# maxWidth = 76-10
-# maxHeight = 76 -10
-# pixelSpacing = 1 #Space between Pixels in mm
-
-# # print("Max Size: {} {}".format(maxWidth, maxHeight))
-# bgrImage = cv.imread(r'C:\Users\amiller\Documents\Fall2019\POE\DotBot\Mountain.jpg')
-# rgbImage = cv.cvtColor(bgrImage, cv.COLOR_BGR2RGB)
+# # # print("Max Size: {} {}".format(maxWidth, maxHeight))
+bgrImage = cv.imread(r'C:\Users\amiller\Documents\Fall2019\POE\DotBot\team.png')
+rgbImage = cv.cvtColor(bgrImage, cv.COLOR_BGR2RGB)
 # # #print("Scaling to {}, {}".format(maxWidth, maxHeight))
-# rgbImage = resizeImage(rgbImage,maxWidth, maxHeight, pixelSpacing)
-# grayImage = cv.cvtColor(rgbImage, cv.COLOR_RGB2GRAY)
+rgbImage = resizeImage(rgbImage,maxWidth, maxHeight, pixelSpacing)
+grayImage = cv.cvtColor(rgbImage, cv.COLOR_RGB2GRAY)
 # # print(grayImage.shape)
 
 
-# ditheredImageGray = grayScaleFloydSteinberg(grayImage)
-# # print(ditheredImageGray.shape)
-# ditheredImageRGB = colorScaleFloydSteinberg(rgbImage)
-# coords = getCoordsGray(ditheredImageGray, pixelSpacing)
-# print(len(coords))
-# # #print(len(coords))
+ditheredImageGray = grayScaleFloydSteinberg(grayImage)
+print(ditheredImageGray)
+ditheredImageRGB = colorScaleFloydSteinberg(rgbImage)
+coords = getCoordsGray(ditheredImageGray, pixelSpacing)
+
+print(len(coords))
 # # #print(coords[9397])
-# stringArray = coordStringArrayCreation(coords, coordsPerString = 50)
+stringArray = coordStringArrayCreation(coords, coordsPerString = 200)
 # # #print(stringArray)
-# sendCoordsGray(stringArray, COMPort)
 
-# # rgbImage = cv.cvtColor(bgrImage, cv.COLOR_BGR2RGB)
-# # rgbImage = resizeImage(rgbImage,110,85,1)
-# # plt.subplot(131),plt.imshow(rgbImage)
-# # plt.title('Original Image'), plt.xticks([]), plt.yticks([])
-# # plt.subplot(132),plt.imshow(ditheredImageRGB)
-# # plt.title('Color Dithered Image'), plt.xticks([]), plt.yticks([])
-# # plt.subplot(133),plt.imshow(ditheredImageGray,cmap = 'gray')
-# # plt.title('Binary Dithered Image'), plt.xticks([]), plt.yticks([])
-# # plt.show()
 
+rgbImage = cv.cvtColor(bgrImage, cv.COLOR_BGR2RGB)
+rgbImage = resizeImage(rgbImage,maxWidth,maxHeight,pixelSpacing)
+plt.subplot(131),plt.imshow(rgbImage)
+plt.title('Original Image'), plt.xticks([]), plt.yticks([])
+plt.subplot(132),plt.imshow(ditheredImageRGB)
+plt.title('Color Dithered Image'), plt.xticks([]), plt.yticks([])
+plt.subplot(133),plt.imshow(ditheredImageGray,cmap = 'gray')
+plt.title('Binary Dithered Image'), plt.xticks([]), plt.yticks([])
+plt.show()
+
+#sendCoordsGray(stringArray, COMPort)
