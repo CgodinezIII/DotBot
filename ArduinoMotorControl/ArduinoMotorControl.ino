@@ -30,7 +30,7 @@ int yDistance = 0;
 int numStepsX = 0;
 int numStepsY = 0;
 int StartMessage = 0;
-const int numCoords = 50;
+const int numCoords = 200;
 int coords[numCoords][2];
 
 
