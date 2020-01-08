@@ -9,9 +9,6 @@ import time
 
 def resizeImage(image, maxWidth, maxHeight, pixelSpacing):
 
-    print('Original dimensions: {}, {}'.format(image.shape[0], image.shape[1]))
-    print("Resizing...")
-
     #Calculate target height and width of resized image given desired dimensions and pixel size
     targetWidth = math.floor(maxWidth/pixelSpacing)  
     targetHeight = math.floor(maxHeight/pixelSpacing)
@@ -21,41 +18,37 @@ def resizeImage(image, maxWidth, maxHeight, pixelSpacing):
     imageHeight = image.shape[0]
     
 
-    #If the image is 'landscape' orientation, rotate 270 degrees to 'portrait' orientation
+    #Rotates image in order to get maximum use of designated space
     if  imageWidth>imageHeight and targetWidth<targetHeight:
         image = imutils.rotate_bound(image, 270)
-        print('flipped')
         imageWidth = image.shape[1]
         imageHeight = image.shape[0]
-    
     
 
     #If shrinking the image use cv.INTER_AREA as interpolation method
     if imageWidth>targetWidth or imageHeight>targetHeight:
         interpolationMethod = cv.INTER_AREA
     
-    #If expanding image use cv.INTER_CUBIC or cv.INTER_LINEAR as interpolation method
+
+    #If expanding image use cv.INTER_CUBIC as interpolation method
     else:
         interpolationMethod = cv.INTER_CUBIC
-        #interpolationMethod = cv.INTER_LINEAR    worse but faster
+
 
     #If the image to target width ratio is greater than the height ratio, set width to max and scale height
     if imageWidth/targetWidth >= imageHeight/targetHeight:
-        print('Scaling based on width')
         newWidth = targetWidth
         newHeight = int((targetWidth/imageWidth)*imageHeight)
        
     #If the image to target height ratio is greater than the width ratio, set height to max and scale width
     else:
-        print('Scaling based on height')
         newWidth = int((targetHeight/imageHeight)*imageWidth)
         newHeight = targetHeight
 
     #Resize image based on new dimensions    
     dim = (newWidth, newHeight)
-    print(dim)
     image = cv.resize(image, dim, interpolation  = interpolationMethod)
-    print('Final dimensions: {}'.format(image.shape))
+    print('Final dimensions: {}mm, {}mm ({}in, {}in)'.format(image.shape[0], image.shape[1], round(image.shape[0]/2.54, 2), round(image.shape[1]/2.54, 2)))
     return image
 def grayScaleFloydSteinberg(grayscaleImage):
     for y in range(grayscaleImage.shape[0]-1):
@@ -117,9 +110,8 @@ def coordStringArrayCreation(coordinateArray, coordsPerString):
     coordString = ""
     coordPos = 0
     remainder = len(coordinateArray)%coordsPerString
-    #print(remainder)
     numComplete = int(len(coordinateArray)/coordsPerString)
-    #print(numComplete)
+
     #Create Coordstring Array
     while(coordPos<len(coordinateArray)):
         coordString = ""
@@ -130,94 +122,84 @@ def coordStringArrayCreation(coordinateArray, coordsPerString):
                     currCoord = coordinateArray[coordPos+i]
                     coordString += str(currCoord[0]) + ", " + str(currCoord[1])
                     coordPos += coordsPerString
-                   
-                    #print(coordPos)
                     coordStringArray.append(coordString)
                     coordString = ""  
-                    #print(coordString)
-                    #ser.write(str.encode(coordString)) 
-                    #print("Send")
+                    
                 else:
                     currCoord = coordinateArray[coordPos+i]
                     coordString = coordString + str(currCoord[0]) + ", " + str(currCoord[1]) + ", "  
                   
         coordString = "" 
-        #print("coordString3")          
+              
         for i in range(remainder):
             if (i == remainder-1):
                 currCoord = coordinateArray[coordPos+i]
                 coordString += str(currCoord[0]) + ", " + str(currCoord[1])
                 coordPos += remainder
-                #print("coordString")
-                #coordStringArray.append(coordString)
+            
                 for i in range(coordsPerString-remainder):
                     coordString += ", -1, -1"
                 coordStringArray.append(coordString)
-                #coordString = "" 
-                #print("Send")
+                
             else:
                 currCoord = coordinateArray[coordPos+i]
-                
                 coordString = coordString + str(currCoord[0]) + ", " + str(currCoord[1]) + ", "
-                #coordStringArray.append(coordString)
-                #print("coordString2")
+               
                             
     return coordStringArray
 def sendCoordsGray(stringArray, COMPort):
     print("Connecting to Serial...")
-    ser = serial.Serial(COMPort, baudrate = 115200, timeout = 1)
-    time.sleep(3)
-    ser.write(str.encode("1")) 
-    stringNum = 0
-    #numCoords = len(stringArray)
-    print("Sending Coords")
-    
+    try:
+        ser = serial.Serial(COMPort, baudrate = 115200, timeout = 1)  
+        time.sleep(3)
+        ser.write(str.encode("1")) 
+        stringNum = 0
+        print("Sending Coords")
+        
 
-    while(stringNum<len(stringArray)):
-         message = ser.readline().decode()
-         #print(message.strip())
-         
-         if(message.strip() == 'Send New Coords'):
-            print("Sending Package "+str(stringNum)+"/"+str(len(stringArray)))
-            ser.write(str.encode(stringArray[stringNum]))
+        while(stringNum<len(stringArray)):
+            message = ser.readline().decode()
             
-            stringNum = stringNum + 1
-           
-            
+            if(message.strip() == 'Send New Coords'):
+                print("Sending Package "+str(stringNum)+"/"+str(len(stringArray)))
+                ser.write(str.encode(stringArray[stringNum]))
+                
+                stringNum = stringNum + 1
+    except:
+        print('Ensure Arduino is plugged in to correct port')
+def visualize(rgbImage, ditheredImageGray, ditheredImageRGB):
+    plt.subplot(131),plt.imshow(rgbImage)
+    plt.title('Original Image'), plt.xticks([]), plt.yticks([])
+    plt.subplot(132),plt.imshow(ditheredImageRGB)
+    plt.title('Color Dithered Image'), plt.xticks([]), plt.yticks([])
+    plt.subplot(133),plt.imshow(ditheredImageGray,cmap = 'gray')
+    plt.title('Binary Dithered Image'), plt.xticks([]), plt.yticks([])
+    plt.show()
+def processing(bgrImage, maxWidth, maxHeight, pixelSpacing):
+    rgbImage = cv.cvtColor(bgrImage, cv.COLOR_BGR2RGB)
+    rgbImageScaled = resizeImage(rgbImage,maxWidth,maxHeight,pixelSpacing)
+    grayImage = cv.cvtColor(rgbImageScaled, cv.COLOR_RGB2GRAY)
+    ditheredImageGray = grayScaleFloydSteinberg(grayImage)
+    ditheredImageRGB = colorScaleFloydSteinberg(rgbImageScaled)
+    return rgbImage, ditheredImageGray, ditheredImageRGB 
+       
 
-COMPort = "COM17"
-maxWidth = 610
-maxHeight = 915
-pixelSpacing = 2 #Space between Pixels in mm
+if __name__ == '__main__':
+    COMPort = "COM17"
+    imagePath = r'C:\Users\amiller\Documents\Fall2019\POE\Dotbot\einstein.jpg'
+    maxWidth = 100 #mm
+    maxHeight = 100 #mm
+    pixelSpacing = 1 #Space between Pixels in mm
 
-# # # print("Max Size: {} {}".format(maxWidth, maxHeight))
-bgrImage = cv.imread(r'C:\Users\amiller\Documents\Fall2019\POE\DotBot\team.png')
-rgbImage = cv.cvtColor(bgrImage, cv.COLOR_BGR2RGB)
-# # #print("Scaling to {}, {}".format(maxWidth, maxHeight))
-rgbImage = resizeImage(rgbImage,maxWidth, maxHeight, pixelSpacing)
-grayImage = cv.cvtColor(rgbImage, cv.COLOR_RGB2GRAY)
-# # print(grayImage.shape)
+    bgrImage = cv.imread(imagePath)
+    rgbImage, ditheredImageGray, ditheredImageRGB = processing(bgrImage, maxWidth, maxHeight, pixelSpacing)
+    coords = getCoordsGray(ditheredImageGray, pixelSpacing)
+    print("Number of Dots: {}".format(len(coords)))
+    print("Approximate Print Time: {} Hrs".format(round(len(coords)/7200, 2)))
+    visualize(rgbImage, ditheredImageGray, ditheredImageRGB)
 
-
-ditheredImageGray = grayScaleFloydSteinberg(grayImage)
-print(ditheredImageGray)
-ditheredImageRGB = colorScaleFloydSteinberg(rgbImage)
-coords = getCoordsGray(ditheredImageGray, pixelSpacing)
-
-print(len(coords))
-# # #print(coords[9397])
-stringArray = coordStringArrayCreation(coords, coordsPerString = 200)
-# # #print(stringArray)
+    #stringArray = coordStringArrayCreation(coords, coordsPerString = 200)
+    # sendCoordsGray(stringArray, COMPort)
 
 
-rgbImage = cv.cvtColor(bgrImage, cv.COLOR_BGR2RGB)
-rgbImage = resizeImage(rgbImage,maxWidth,maxHeight,pixelSpacing)
-plt.subplot(131),plt.imshow(rgbImage)
-plt.title('Original Image'), plt.xticks([]), plt.yticks([])
-plt.subplot(132),plt.imshow(ditheredImageRGB)
-plt.title('Color Dithered Image'), plt.xticks([]), plt.yticks([])
-plt.subplot(133),plt.imshow(ditheredImageGray,cmap = 'gray')
-plt.title('Binary Dithered Image'), plt.xticks([]), plt.yticks([])
-plt.show()
 
-#sendCoordsGray(stringArray, COMPort)
