@@ -1,17 +1,13 @@
-#from PyQt5 import QtWidgets
 from DotBotImageProcessingDataTransmission import resizeImage, grayScaleFloydSteinberg, getCoordsGray, coordStringArrayCreation, sendCoordsGray
 import ctypes
 import qimage2ndarray
 import sys
-from PyQt5.QtWidgets import QLabel, QMainWindow, QApplication, QWidget, QVBoxLayout
-from PyQt5 import QtGui
+from PyQt5 import QtGui, QtCore, QtWidgets
 from PyQt5.QtCore import *
-from PyQt5.QtCore import Qt
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QPushButton, 
-                             QToolTip, QMessageBox, QLabel, QLineEdit)
-from PyQt5.QtGui import QIcon, QPixmap
-from PyQt5 import QtGui, QtCore, QtWidgets
+                             QToolTip, QMessageBox, QLabel, QLineEdit, QWidget, QVBoxLayout)
+
 import numpy as np 
 import cv2 as cv
 import matplotlib.pyplot as plt
@@ -22,7 +18,6 @@ import time
 user32 = ctypes.windll.user32
 screensize = user32.GetSystemMetrics(0), user32.GetSystemMetrics(1)
 
-#C:\Users\amiller\Documents\Fall2019\POE\DotBot\Logo.jpg
 class mainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -73,7 +68,7 @@ class LoadImageWindow(QMainWindow):                           # <===
         pybutton = QPushButton('Continue', self)
         pybutton.clicked.connect(self.clickMethod)
         pybutton.adjustSize()
-        pybutton.move(400, 60)        
+        pybutton.move(int(user32.GetSystemMetrics(0)*.65), int(user32.GetSystemMetrics(1)*.65))        
 
     def clickMethod(self):
         self.address = self.line.text()
@@ -105,29 +100,29 @@ class imageWindow(QMainWindow):                           # <===
 
         self.widthLabel = QLabel(self)
         self.widthLabel.setText('Max Width (mm):')
-        self.widthLabel.move(int((user32.GetSystemMetrics(0)*.45)), int((user32.GetSystemMetrics(1)*.75)/8))
+        self.widthLabel.move(int((user32.GetSystemMetrics(0)*.45)), int((user32.GetSystemMetrics(1)*.36)-(.05*(user32.GetSystemMetrics(1)))))
         self.widthLabel.adjustSize()        
         self.lineWidth = QLineEdit(self)
-        self.lineWidth.move(int((user32.GetSystemMetrics(0)*.52)), int((user32.GetSystemMetrics(1)*.75)/8))
+        self.lineWidth.move(int((user32.GetSystemMetrics(0)*.52)), int((user32.GetSystemMetrics(1)*.36)-(.05*(user32.GetSystemMetrics(1)))))
 
         self.heightLabel = QLabel(self)
         self.heightLabel.setText('Max Height (mm):')
-        self.heightLabel.move(int((user32.GetSystemMetrics(0)*.45)), int((user32.GetSystemMetrics(1)*.75)/8+75)) 
+        self.heightLabel.move(int((user32.GetSystemMetrics(0)*.45)), int(user32.GetSystemMetrics(1)*.36)) 
         self.heightLabel.adjustSize()       
         self.lineHeight = QLineEdit(self)
-        self.lineHeight.move(int((user32.GetSystemMetrics(0)*.52)), int((user32.GetSystemMetrics(1)*.75)/8+75))
+        self.lineHeight.move(int((user32.GetSystemMetrics(0)*.52)), int(user32.GetSystemMetrics(1)*.36))
 
         self.spacingLabel = QLabel(self)
         self.spacingLabel.setText('Spacing (mm):')
-        self.spacingLabel.move(int((user32.GetSystemMetrics(0)*.45)), int((user32.GetSystemMetrics(1)*.75)/8+150))
+        self.spacingLabel.move(int((user32.GetSystemMetrics(0)*.45)), int((user32.GetSystemMetrics(1)*.36)+(.05*(user32.GetSystemMetrics(1)))))
         self.spacingLabel.adjustSize()        
         self.lineSpacing = QLineEdit(self)
-        self.lineSpacing.move(int((user32.GetSystemMetrics(0)*.52)), int((user32.GetSystemMetrics(1)*.75)/8+150))
+        self.lineSpacing.move(int((user32.GetSystemMetrics(0)*.52)), int((user32.GetSystemMetrics(1)*.36)+(.05*(user32.GetSystemMetrics(1)))))
 
         pybutton = QPushButton('Continue', self)
         pybutton.clicked.connect(self.clickMethod)
         pybutton.adjustSize()
-        pybutton.move(1200, 750)  
+        pybutton.move(int(user32.GetSystemMetrics(0)*.65), int(user32.GetSystemMetrics(1)*.65))  
         label.show()
         
 
@@ -154,6 +149,7 @@ class ditheredWindow(QMainWindow):                           # <===
         self.resizedImage = resizeImage(image, int(maxWidth), int(maxHeight), int(spacing))
         self.grayImage = cv.cvtColor(self.resizedImage, cv.COLOR_RGB2GRAY)
         self.ditheredImageGray = grayScaleFloydSteinberg(self.grayImage)
+        self.coords = getCoordsGray(self.ditheredImageGray, int(spacing))
 
         label = QLabel(self)
         
@@ -164,18 +160,33 @@ class ditheredWindow(QMainWindow):                           # <===
         label.setPixmap(img2)
 
         lay.addWidget(label)
-        
-        array = coordStringArrayCreation(self.ditheredImageGray, 50)
 
-        self.widthLabel = QLabel(self)
-        self.widthLabel.setText('COM Port (COM17):')
-        self.widthLabel.move(int((user32.GetSystemMetrics(0)*.45)), int((user32.GetSystemMetrics(1)*.75)/8))
-        self.widthLabel.adjustSize()        
-        self.lineWidth = QLineEdit(self)
-        self.lineWidth.move(int((user32.GetSystemMetrics(0)*.53)), int((user32.GetSystemMetrics(1)*.75)/8))
+        self.array = coordStringArrayCreation(self.coords, 50)
 
-        self.pushButtonPrint = QPushButton("Take Picture", self)
-        self.pushButtonPrint.move(int((3*user32.GetSystemMetrics(0)*.75)/4), int((user32.GetSystemMetrics(1)*.75)/2))
+        self.COMLabel = QLabel(self)
+        self.COMLabel.setText('COM Port (COM17):')
+        self.COMLabel.move(int((user32.GetSystemMetrics(0)*.45)), int((user32.GetSystemMetrics(1)*.36)-(.075*(user32.GetSystemMetrics(1)))))
+        self.COMLabel.adjustSize()        
+        self.COMPort = QLineEdit(self)
+        self.COMPort.move(int((user32.GetSystemMetrics(0)*.533)), int((user32.GetSystemMetrics(1)*.36)-(.075*(user32.GetSystemMetrics(1)))))
+
+        self.numDots = QLabel(self)
+        self.numDots.setText("Number of Dots: {}".format(str(len(self.coords))))
+        self.numDots.move(int((user32.GetSystemMetrics(0)*.45)), int((user32.GetSystemMetrics(1)*.36)-(.025*(user32.GetSystemMetrics(1)))))
+        self.numDots.adjustSize() 
+
+        self.printTime = QLabel(self)
+        self.printTime.setText("Approximate Print Time: {} Hrs".format(round(len(self.coords)/7200, 2)))
+        self.printTime.move(int((user32.GetSystemMetrics(0)*.45)), int((user32.GetSystemMetrics(1)*.36)+(.025*(user32.GetSystemMetrics(1)))))
+        self.printTime.adjustSize()
+
+        self.imageDims = QLabel(self)
+        self.imageDims.setText('Final dimensions: {}mm, {}mm ({}in, {}in)'.format(self.resizedImage.shape[0], self.resizedImage.shape[1], round(self.resizedImage.shape[0]/2.54, 2), round(self.resizedImage.shape[1]/2.54, 2)))
+        self.imageDims.move(int((user32.GetSystemMetrics(0)*.45)), int((user32.GetSystemMetrics(1)*.36)+(.075*(user32.GetSystemMetrics(1)))))
+        self.imageDims.adjustSize()
+
+        self.pushButtonPrint = QPushButton("Print", self)
+        self.pushButtonPrint.move(int(user32.GetSystemMetrics(0)*.65), int(user32.GetSystemMetrics(1)*.65))
         self.pushButtonPrint.adjustSize()
         
     
@@ -185,9 +196,9 @@ class ditheredWindow(QMainWindow):                           # <===
         label.show()
 
     def clickMethod(self):
-        
-
-       
+        self.port = self.COMPort.text()
+        sendCoordsGray(self.array, self.port)
+     
 class TakeImageWindow(QMainWindow):                           # <===
     def __init__(self):
         super().__init__()
@@ -200,8 +211,7 @@ class TakeImageWindow(QMainWindow):                           # <===
 
         self.line.move(int((user32.GetSystemMetrics(0)*.75)/2), int((user32.GetSystemMetrics(1)*.75)/2))
         self.line.resize(200, 32)
-        self.nameLabel.move(20, 20)
-       
+        self.nameLabel.move(20, 20)      
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
